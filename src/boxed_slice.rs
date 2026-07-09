@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use core::{
-    mem::{forget, MaybeUninit},
+    mem::{MaybeUninit, forget},
     ops::{Deref, DerefMut},
 };
 
