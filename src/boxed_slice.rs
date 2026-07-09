@@ -20,6 +20,17 @@ impl<'a, T> Drop for PanicGuard<'a, T> {
     }
 }
 
+#[inline]
+pub fn new_empty_boxed_slice<T>() -> Box<[T]> {
+    Box::new([])
+}
+
+#[inline]
+pub fn new_boxed_slice_from_array<T, const N: usize>(array: [T; N]) -> Box<[T]> {
+    Box::new(array)
+}
+
+#[inline]
 pub fn new_boxed_slice<T: Default>(len: usize) -> Box<[T]> {
     new_boxed_slice_with_initializer(T::default, len)
 }
@@ -46,6 +57,7 @@ pub fn new_boxed_slice_with_value<T: Clone>(value: T, len: usize) -> Box<[T]> {
     }
 }
 
+#[inline]
 pub fn new_boxed_slice_with_initializer<T>(mut func: impl FnMut() -> T, len: usize) -> Box<[T]> {
     new_boxed_slice_with_indexed_initializer(|_| func(), len)
 }
@@ -77,8 +89,14 @@ pub fn new_boxed_slice_with_indexed_initializer<T>(
 pub struct BoxedSlice<T>(alloc::boxed::Box<[T]>);
 
 impl<T> BoxedSlice<T> {
+    #[inline]
     pub fn new_empty() -> Self {
-        Self(Box::new([]))
+        Self(new_empty_boxed_slice())
+    }
+
+    #[inline]
+    pub fn from_array<const N: usize>(array: [T; N]) -> Self {
+        Self(new_boxed_slice_from_array(array))
     }
 
     #[inline]

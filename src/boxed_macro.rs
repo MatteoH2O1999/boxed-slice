@@ -1,10 +1,49 @@
+/// Creates a [`Box`](`alloc::boxed::Box`) containing the arguments.
+///
+/// `boxed!` allows boxed slices to be defined either enumerating the elements or
+/// with a value and a length.
+/// There are three forms to this macro:
+/// * Create an empty boxed slice:
+/// ```
+/// # use box_slice::boxed;
+/// let boxed_slice: Box<[f64]> = boxed!();
+/// let expected = Box::new([]) as Box<[f64]>;
+/// assert_eq!(boxed_slice, expected);
+/// ```
+/// * Create a boxed slice from an array:
+/// ```
+/// # use box_slice::boxed;
+/// let boxed_slice = boxed!([42, 69, 2]);
+/// let expected = vec![42, 69, 2].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
+/// * Create a boxed slice from a given element and size:
+/// ```
+/// # use box_slice::boxed;
+/// let boxed_slice = boxed!(42, 3);
+/// let expected = vec![42; 3].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
+/// Note that unlike array expressions this syntax supports all elements
+/// which implement [`Clone`] and the number of elements doesn't have to be
+/// a constant.
+///
+/// This will use `clone` to duplicate an expression, so one should be careful
+/// using this with types having a nonstandard `Clone` implementation. For
+/// example, `boxed!(Rc::new(1), 5)` will create a boxed slice of five references
+/// to the same boxed integer value, not five references pointing to independently
+/// boxed integers.
+///
+/// Also, note that `boxed!(expr, 0)` is allowed, and produces an empty boxed slice.
+/// This will still evaluate `expr`, however, and immediately drop the resulting value, so
+/// be mindful of side effects.
 #[macro_export]
 macro_rules! boxed {
     () => {
-        alloc::boxed::Box::new([]) as alloc::boxed::Box<[_]>
+        $crate::new_empty_boxed_slice()
     };
     ($elem:expr) => {
-        alloc::boxed::Box::new($elem) as alloc::boxed::Box<[_]>
+        $crate::new_boxed_slice_from_array($elem)
     };
     ($elem:expr, $n:expr) => {
         $crate::new_boxed_slice_with_value($elem, $n)
