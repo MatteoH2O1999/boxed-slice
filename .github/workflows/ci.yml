@@ -1,0 +1,165 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: stable
+          profile: minimal
+          components: clippy rustfmt
+      - name: Check code formatting
+        run: cargo fmt -- --check
+      - name: Build clippy
+        run: cargo clippy --all-features
+      - name: Check clippy lint
+        run: cargo clippy --all-features -- -Dwarnings
+
+  docs:
+    name: Check docs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: stable
+          profile: minimal
+          components: rust-docs
+      - name: Check docs
+        run: cargo doc --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  tests:
+    name: Unit tests on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: stable
+          profile: minimal
+          subcommands: cargo-all-features
+          cache: binstall
+      - name: Test build
+        run: cargo all-features build --release
+      - name: Build tests
+        run: cargo all-features test --no-run
+      - name: Run tests
+        run: cargo all-features test --lib --bins --tests
+      - name: Run doc tests
+        run: cargo test --doc --all-features
+
+  miri:
+    name: Check for UB on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: nightly
+          profile: minimal
+          components: miri
+          subcommands: cargo-all-features
+          cache: binstall
+      - name: Build tests
+        run: |
+          cargo miri setup
+          cargo all-features test --no-run
+      - name: Run tests
+        run: cargo all-features miri test --lib --bins --tests
+      - name: Run doc tests
+        run: cargo miri test --doc --all-features
+
+  api:
+    name: Check semver and MSV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: stable
+          profile: minimal
+          subcommands: cargo-semver-checks cargo-msrv
+          cache: binstall
+      - name: Check semver compatibility
+        run: cargo semver-checks --all-features
+      - name: Check minimum Rust version
+        run: |
+          cargo msrv set 1.56
+          cargo msrv find --write-msrv --ignore-lockfile --all-features
+          git diff --exit-code
+
+  publish:
+    needs: [api, docs, lint, tests, miri]
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          submodules: recursive
+      - name: Setup Rust
+        uses: MatteoH2O1999/setup-rust@v2
+        with:
+          channel: stable
+          profile: minimal
+      - name: Test publishing
+        if: ${{ github.event_name != 'release' }}
+        run: cargo publish --dry-run -v
+      - name: Publish package
+        if: ${{ github.event_name == 'release' }}
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}

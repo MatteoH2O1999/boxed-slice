@@ -1,0 +1,10 @@
+[package]
+name = "boxed_slice"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matteo Dell'Acqua <dellacqua.matteo99@gmail.com>"]
+description = "Helpers to create boxed slices without allocating a Vec first"
+repository = "https://github.com/MatteoH2O1999/boxed-slice"
+license = "MIT"
+keywords = ["slice", "box", "boxes", "helpers", "macro"]
+categories = ["rust-patterns", "no-std"]
