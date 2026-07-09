@@ -4,6 +4,7 @@ use core::{
     ops::{Deref, DerefMut},
 };
 
+#[derive(Debug)]
 struct PanicGuard<'a, T> {
     slice: &'a mut [MaybeUninit<T>],
     initialized: usize,
@@ -12,8 +13,8 @@ struct PanicGuard<'a, T> {
 impl<'a, T> Drop for PanicGuard<'a, T> {
     fn drop(&mut self) {
         let initialized_part = &mut self.slice[..self.initialized];
-        // SAFETY: this raw sub-slice will contain only initialized objects.
         unsafe {
+            // SAFETY: this raw sub-slice will contain only initialized objects.
             initialized_part.assume_init_drop();
         }
     }
@@ -72,9 +73,14 @@ pub fn new_boxed_slice_with_indexed_initializer<T>(
 }
 
 #[repr(transparent)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub struct BoxedSlice<T>(alloc::boxed::Box<[T]>);
 
 impl<T> BoxedSlice<T> {
+    pub fn new_empty() -> Self {
+        Self(Box::new([]))
+    }
+
     #[inline]
     pub fn new(len: usize) -> Self
     where
@@ -125,5 +131,75 @@ impl<T> Deref for BoxedSlice<T> {
 impl<T> DerefMut for BoxedSlice<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use alloc::vec;
+
+    use super::*;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    struct TestType {
+        value: usize,
+    }
+
+    impl Default for TestType {
+        fn default() -> Self {
+            Self { value: 42 }
+        }
+    }
+
+    #[test]
+    fn test_empty_default() {
+        let slice = BoxedSlice::<TestType>::new(0);
+
+        assert!(slice.is_empty());
+    }
+
+    #[test]
+    fn test_empty_value() {
+        let slice = BoxedSlice::with_value(TestType { value: 69 }, 0);
+
+        assert!(slice.is_empty());
+    }
+
+    #[test]
+    fn test_empty_init() {
+        let slice = BoxedSlice::with_indexed_initializer(|i| TestType { value: i }, 0);
+
+        assert!(slice.is_empty());
+    }
+
+    #[test]
+    fn test_default() {
+        let slice = BoxedSlice::<TestType>::new(5);
+        let expected = vec![TestType::default(); 5].into_boxed_slice();
+
+        assert_eq!(slice.into_inner(), expected);
+    }
+
+    #[test]
+    fn test_value() {
+        let slice = BoxedSlice::with_value(TestType { value: 69 }, 5);
+        let expected = vec![TestType { value: 69 }; 5].into_boxed_slice();
+
+        assert_eq!(slice.into_inner(), expected);
+    }
+
+    #[test]
+    fn test_init() {
+        let slice = BoxedSlice::with_indexed_initializer(|i| TestType { value: i }, 5);
+        let expected = vec![
+            TestType { value: 0 },
+            TestType { value: 1 },
+            TestType { value: 2 },
+            TestType { value: 3 },
+            TestType { value: 4 },
+        ]
+        .into_boxed_slice();
+
+        assert_eq!(slice.into_inner(), expected);
     }
 }
