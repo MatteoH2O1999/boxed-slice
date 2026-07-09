@@ -1,5 +1,5 @@
 [package]
-name = "boxed_slice"
+name = "box_slice"
 version = "0.1.0"
 edition = "2021"
 authors = ["Matteo Dell'Acqua <dellacqua.matteo99@gmail.com>"]
