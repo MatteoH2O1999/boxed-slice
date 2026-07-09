@@ -136,9 +136,8 @@ impl<T> DerefMut for BoxedSlice<T> {
 
 #[cfg(test)]
 mod test {
-    use alloc::vec;
-
     use super::*;
+    use alloc::vec;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     struct TestType {
@@ -152,28 +151,28 @@ mod test {
     }
 
     #[test]
-    fn test_empty_default() {
+    fn empty_default() {
         let slice = BoxedSlice::<TestType>::new(0);
 
         assert!(slice.is_empty());
     }
 
     #[test]
-    fn test_empty_value() {
+    fn empty_value() {
         let slice = BoxedSlice::with_value(TestType { value: 69 }, 0);
 
         assert!(slice.is_empty());
     }
 
     #[test]
-    fn test_empty_init() {
+    fn empty_init() {
         let slice = BoxedSlice::with_indexed_initializer(|i| TestType { value: i }, 0);
 
         assert!(slice.is_empty());
     }
 
     #[test]
-    fn test_default() {
+    fn default() {
         let slice = BoxedSlice::<TestType>::new(5);
         let expected = vec![TestType::default(); 5].into_boxed_slice();
 
@@ -181,7 +180,7 @@ mod test {
     }
 
     #[test]
-    fn test_value() {
+    fn value() {
         let slice = BoxedSlice::with_value(TestType { value: 69 }, 5);
         let expected = vec![TestType { value: 69 }; 5].into_boxed_slice();
 
@@ -189,7 +188,7 @@ mod test {
     }
 
     #[test]
-    fn test_init() {
+    fn init() {
         let slice = BoxedSlice::with_indexed_initializer(|i| TestType { value: i }, 5);
         let expected = vec![
             TestType { value: 0 },

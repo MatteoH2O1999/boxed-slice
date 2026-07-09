@@ -4,4 +4,6 @@
 mod boxed_slice;
 pub use boxed_slice::*;
 
+mod boxed_macro;
+
 extern crate alloc;
