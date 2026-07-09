@@ -1,6 +1,6 @@
 [package]
 name = "box_slice"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Matteo Dell'Acqua <dellacqua.matteo99@gmail.com>"]
 description = "Helpers to create boxed slices without allocating a Vec first"
