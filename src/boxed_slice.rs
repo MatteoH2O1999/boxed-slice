@@ -222,9 +222,8 @@ pub fn new_boxed_slice_with_indexed_initializer<T>(
 /// This is just a wrapper around [`Box<[T]>`](`Box`).
 /// As such it implements [`Deref`] targeting [`Box<[T]>`](`Box`).
 ///
-/// Convenience methods like [`as_slice`](`Self::as_slice`), [`as_mut_slice`](`Self::as_mut_slice`),
-/// [`as_box`](`Self::as_box`) and [`as_box_mut`](`Self::as_box_mut`) are provided for a
-/// more fluent syntax.
+/// Convenience methods like [`as_slice`](`Self::as_slice`) and [`as_mut_slice`](`Self::as_mut_slice`),
+/// are provided for a more fluent syntax.
 ///
 /// # Constructors
 /// [`BoxedSlice`] wraps around all the functions in this crate to create [`Box<[T]>`](`Box`):
@@ -302,16 +301,6 @@ impl<T> BoxedSlice<T> {
 
     #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [T] {
-        self
-    }
-
-    #[inline]
-    pub fn as_box(&self) -> &Box<[T]> {
-        self
-    }
-
-    #[inline]
-    pub fn as_box_mut(&mut self) -> &mut Box<[T]> {
         self
     }
 }
