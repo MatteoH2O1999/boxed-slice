@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use core::{
+    borrow::{Borrow, BorrowMut},
     mem::{MaybeUninit, forget},
     ops::{Deref, DerefMut},
 };
@@ -231,6 +232,16 @@ impl<T> BoxedSlice<T> {
     pub fn into_inner(self) -> Box<[T]> {
         self.0
     }
+
+    #[inline]
+    pub fn as_slice(&self) -> &[T] {
+        self
+    }
+
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self
+    }
 }
 
 impl<T> From<BoxedSlice<T>> for Box<[T]> {
@@ -244,6 +255,30 @@ impl<T> From<Box<[T]>> for BoxedSlice<T> {
     #[inline]
     fn from(value: Box<[T]>) -> Self {
         Self(value)
+    }
+}
+
+impl<T> AsRef<[T]> for BoxedSlice<T> {
+    fn as_ref(&self) -> &[T] {
+        self
+    }
+}
+
+impl<T> AsMut<[T]> for BoxedSlice<T> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self
+    }
+}
+
+impl<T> Borrow<[T]> for BoxedSlice<T> {
+    fn borrow(&self) -> &[T] {
+        self
+    }
+}
+
+impl<T> BorrowMut<[T]> for BoxedSlice<T> {
+    fn borrow_mut(&mut self) -> &mut [T] {
+        self
     }
 }
 
