@@ -426,7 +426,6 @@ impl<T> BoxedSlice<T> {
     /// let inner_box = boxed_slice.into_box(); // Type: Box<[usize]>
     /// assert_eq!(inner_box, b);
     /// ```
-
     #[inline]
     pub fn into_box(self) -> Box<[T]> {
         self.into_inner()
