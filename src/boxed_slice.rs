@@ -243,21 +243,83 @@ pub fn new_boxed_slice_with_indexed_initializer<T>(
 pub struct BoxedSlice<T>(alloc::boxed::Box<[T]>);
 
 impl<T> BoxedSlice<T> {
+    /// Creates a new empty [`BoxedSlice`] of the specified type.
+    ///
+    /// # Examples
+    /// Usually the type must be specified with turbofish:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::<f64>::new_empty();
+    /// assert!(boxed_slice.is_empty());
+    /// ```
+    /// It can also be specified with the variable declaration:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice: BoxedSlice<f64> = BoxedSlice::new_empty();
+    /// assert!(boxed_slice.is_empty());
+    /// ```
     #[inline]
     pub fn new_empty() -> Self {
         Self(new_empty_boxed_slice())
     }
 
+    /// Creates a [`BoxedSlice`] from a [`Box<[T]>`](`Box`).
+    ///
+    /// # Examples
+    /// The type is inferred from the [`Box<[T]>`](`Box`):
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let b: Box<[usize]> = Box::new([1, 2, 3]);
+    /// let boxed_slice = BoxedSlice::from_box(b); // Inferred: BoxedSlice<usize>
+    /// assert_eq!(boxed_slice.as_slice(), [1, 2, 3]);
+    /// ```
     #[inline]
     pub fn from_box(b: Box<[T]>) -> Self {
         Self(b)
     }
 
+    /// Creates a [`BoxedSlice`] from the given array.
+    ///
+    /// # Examples
+    /// The type is usually inferred for non-empty arrays:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::from_array([1.0f64, 3.0]); // Inferred: BoxedSlice<f64>
+    /// let expected = vec![1.0f64, 3.0];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
     #[inline]
     pub fn from_array<const N: usize>(array: [T; N]) -> Self {
         Self(new_boxed_slice_from_array(array))
     }
 
+    /// Creates a [`BoxedSlice`] of length `len` initialized using the type's [`Default`].
+    ///
+    /// # Examples
+    /// Usually the type must be specified with turbofish:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::<f64>::new(5);
+    /// let expected = vec![f64::default(); 5];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
+    /// It can also be specified with the variable declaration:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice: BoxedSlice<f64> = BoxedSlice::new(5);
+    /// let expected = vec![f64::default(); 5];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
+    ///
+    /// # Panic
+    /// This function panics if any call to [`Default`] panics.
+    /// Elements already written to the slice are dropped.
     #[inline]
     pub fn new(len: usize) -> Self
     where
@@ -266,6 +328,24 @@ impl<T> BoxedSlice<T> {
         Self(new_boxed_slice(len))
     }
 
+    /// Creates a [`BoxedSlice`] of length `len` initialized to `value`.
+    ///
+    /// The passed value is inserted as the last slice element, while the others
+    /// are obtained through [`Clone`].
+    ///
+    /// # Examples
+    /// The type can usually be inferred:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::with_value(1.5f64, 5); // Inferred: BoxedSlice<f64>
+    /// let expected = vec![1.5f64; 5];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
+    ///
+    /// # Panic
+    /// This function panics if any call to [`Clone`] panics.
+    /// Elements already written to the slice are dropped.
     #[inline]
     pub fn with_value(value: T, len: usize) -> Self
     where
@@ -274,31 +354,112 @@ impl<T> BoxedSlice<T> {
         Self(new_boxed_slice_with_value(value, len))
     }
 
+    /// Creates a [`BoxedSlice`] of length `len` initialized using `func`.
+    ///
+    /// # Examples
+    /// The type can usually be inferred from the passed closure:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::with_initializer(|| 15.0f64, 5); // Inferred: BoxedSlice<f64>
+    /// let expected = vec![15.0f64; 5];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
+    ///
+    /// # Panic
+    /// This function panics if any call to `func` panics.
+    /// Elements already written to the slice are dropped.
     #[inline]
     pub fn with_initializer(func: impl FnMut() -> T, len: usize) -> Self {
         Self(new_boxed_slice_with_initializer(func, len))
     }
 
+    /// Creates a [`BoxedSlice`] of length `len` initialized using `func`,
+    ///
+    /// `func` takes an [`usize`] from `0` to `len - 1` and returns the `n-th`
+    /// element of the boxed slice.
+    ///
+    /// # Examples
+    /// The type can usually be inferred from the passed closure:
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let boxed_slice = BoxedSlice::with_indexed_initializer(|i| i, 5); // Inferred: Box<[usize]>
+    /// let expected = vec![0, 1, 2, 3, 4];
+    /// assert_eq!(boxed_slice.as_slice(), expected);
+    /// ```
+    ///
+    /// # Panic
+    /// This function panics if any call to `func` panics.
+    /// Elements already written to the slice are dropped.
     #[inline]
     pub fn with_indexed_initializer(func: impl FnMut(usize) -> T, len: usize) -> Self {
         Self(new_boxed_slice_with_indexed_initializer(func, len))
     }
 
+    /// Consumes the [`BoxedSlice`] and returns the contained [`Box<[T]>`](`Box`).
+    ///
+    /// # Examples
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let b: Box<[usize]> = Box::new([1, 2, 3]);
+    /// let boxed_slice = BoxedSlice::from_box(b.clone());
+    /// let inner_box = boxed_slice.into_inner(); // Type: Box<[usize]>
+    /// assert_eq!(inner_box, b);
+    /// ```
     #[inline]
     pub fn into_inner(self) -> Box<[T]> {
         self.0
     }
+
+    /// Consumes the [`BoxedSlice`] and returns the contained [`Box<[T]>`](`Box`).
+    ///
+    /// Equivalent to [`into_inner`](`Self::into_inner`).
+    ///
+    /// # Examples
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let b: Box<[usize]> = Box::new([1, 2, 3]);
+    /// let boxed_slice = BoxedSlice::from_box(b.clone());
+    /// let inner_box = boxed_slice.into_box(); // Type: Box<[usize]>
+    /// assert_eq!(inner_box, b);
+    /// ```
 
     #[inline]
     pub fn into_box(self) -> Box<[T]> {
         self.into_inner()
     }
 
+    /// Returns a view of the box as a slice.
+    ///
+    /// # Examples
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let b: Box<[usize]> = Box::new([1, 2, 3]);
+    /// let boxed_slice = BoxedSlice::from_box(b.clone());
+    /// let slice = boxed_slice.as_slice(); // Type: &[usize]
+    /// assert_eq!(slice, [1, 2, 3]);
+    /// ```
     #[inline]
     pub fn as_slice(&self) -> &[T] {
         self
     }
 
+    /// Returns a view of the box as a mutable slice.
+    ///
+    /// # Examples
+    /// ```
+    /// use box_slice::BoxedSlice;
+    ///
+    /// let b: Box<[usize]> = Box::new([1, 2, 3]);
+    /// let mut boxed_slice = BoxedSlice::from_box(b.clone());
+    /// let slice = boxed_slice.as_mut_slice(); // Type: &mut [usize]
+    /// slice[1] = 4;
+    /// assert_eq!(slice, [1, 4, 3]);
+    /// ```
     #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         self
