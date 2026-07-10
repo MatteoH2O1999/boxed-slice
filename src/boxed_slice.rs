@@ -187,14 +187,71 @@ pub fn new_boxed_slice_with_indexed_initializer<T>(
     }
 }
 
+/// Convenience struct to handle boxed slices. Equivalent to [`Box<[T]>`](`Box`).
+///
+/// # Examples
+/// ```
+/// use box_slice::BoxedSlice;
+///
+/// let mut boxed_slice = BoxedSlice::with_value(5usize, 3); // Type: BoxedSlice<usize>
+///
+/// assert_eq!(boxed_slice.len(), 3);
+/// assert_eq!(boxed_slice.as_slice(), [5, 5, 5]);
+///
+/// boxed_slice[0] = 3;
+/// assert_eq!(boxed_slice.as_slice(), [3, 5, 5]);
+///
+/// let inner = boxed_slice.into_inner(); // Type: Box<[usize]>
+/// ```
+/// The [`boxed!`](`crate::boxed`) macro provides convenient initalization methods:
+/// ```
+/// use box_slice::boxed;
+///
+/// let mut boxed_slice = boxed!(5usize, 3); // Type: BoxedSlice<usize>
+///
+/// assert_eq!(boxed_slice.len(), 3);
+/// assert_eq!(boxed_slice.as_slice(), [5, 5, 5]);
+///
+/// boxed_slice[0] = 3;
+/// assert_eq!(boxed_slice.as_slice(), [3, 5, 5]);
+///
+/// let inner = boxed_slice.into_inner(); // Type: Box<[usize]>
+/// ```
+///
+/// # Wrapper
+/// This is just a wrapper around [`Box<[T]>`](`Box`).
+/// As such it implements [`Deref`] targeting [`Box<[T]>`](`Box`).
+///
+/// Convenience methods like [`as_slice`](`Self::as_slice`), [`as_mut_slice`](`Self::as_mut_slice`),
+/// [`as_box`](`Self::as_box`) and [`as_box_mut`](`Self::as_box_mut`) are provided for a
+/// more fluent syntax.
+///
+/// # Constructors
+/// [`BoxedSlice`] wraps around all the functions in this crate to create [`Box<[T]>`](`Box`):
+/// * [`new_empty`](`Self::new_empty`): [`new_empty_boxed_slice`]
+/// * [`from_array`](`Self::from_array`): [`new_boxed_slice_from_array`]
+/// * [`new`](`Self::new`): [`new_boxed_slice`]
+/// * [`with_value`](`Self::with_value`): [`new_boxed_slice_with_value`]
+/// * [`with_initializer`](`Self::with_initializer`): [`new_boxed_slice_with_initializer`]
+/// * [`with_indexed_initializer`](`Self::with_indexed_initializer`): [`new_boxed_slice_with_indexed_initializer`]
+///
+/// In addition, it exposes an additional constructor that takes a [`Box<[T]>`](`Box`):[`from_box`](`Self::from_box`).
+///
+/// # Repr
+/// This wrapper uses `repr(transparent)` to guarantee the same ABIs as [`Box<[T]>`](`Box`).
 #[repr(transparent)]
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BoxedSlice<T>(alloc::boxed::Box<[T]>);
 
 impl<T> BoxedSlice<T> {
     #[inline]
     pub fn new_empty() -> Self {
         Self(new_empty_boxed_slice())
+    }
+
+    #[inline]
+    pub fn from_box(b: Box<[T]>) -> Self {
+        Self(b)
     }
 
     #[inline]
@@ -234,6 +291,11 @@ impl<T> BoxedSlice<T> {
     }
 
     #[inline]
+    pub fn into_box(self) -> Box<[T]> {
+        self.into_inner()
+    }
+
+    #[inline]
     pub fn as_slice(&self) -> &[T] {
         self
     }
@@ -241,6 +303,22 @@ impl<T> BoxedSlice<T> {
     #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         self
+    }
+
+    #[inline]
+    pub fn as_box(&self) -> &Box<[T]> {
+        self
+    }
+
+    #[inline]
+    pub fn as_box_mut(&mut self) -> &mut Box<[T]> {
+        self
+    }
+}
+
+impl<T> Default for BoxedSlice<T> {
+    fn default() -> Self {
+        Self::new_empty()
     }
 }
 
@@ -254,30 +332,62 @@ impl<T> From<BoxedSlice<T>> for Box<[T]> {
 impl<T> From<Box<[T]>> for BoxedSlice<T> {
     #[inline]
     fn from(value: Box<[T]>) -> Self {
-        Self(value)
+        Self::from_box(value)
     }
 }
 
 impl<T> AsRef<[T]> for BoxedSlice<T> {
+    #[inline]
     fn as_ref(&self) -> &[T] {
         self
     }
 }
 
 impl<T> AsMut<[T]> for BoxedSlice<T> {
+    #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self
     }
 }
 
 impl<T> Borrow<[T]> for BoxedSlice<T> {
+    #[inline]
     fn borrow(&self) -> &[T] {
         self
     }
 }
 
 impl<T> BorrowMut<[T]> for BoxedSlice<T> {
+    #[inline]
     fn borrow_mut(&mut self) -> &mut [T] {
+        self
+    }
+}
+
+impl<T> AsRef<Box<[T]>> for BoxedSlice<T> {
+    #[inline]
+    fn as_ref(&self) -> &Box<[T]> {
+        self
+    }
+}
+
+impl<T> AsMut<Box<[T]>> for BoxedSlice<T> {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Box<[T]> {
+        self
+    }
+}
+
+impl<T> Borrow<Box<[T]>> for BoxedSlice<T> {
+    #[inline]
+    fn borrow(&self) -> &Box<[T]> {
+        self
+    }
+}
+
+impl<T> BorrowMut<Box<[T]>> for BoxedSlice<T> {
+    #[inline]
+    fn borrow_mut(&mut self) -> &mut Box<[T]> {
         self
     }
 }
