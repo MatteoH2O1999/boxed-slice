@@ -1,4 +1,4 @@
-/// Creates a [`Box`](`alloc::boxed::Box`) containing the arguments.
+/// Creates a [`BoxedSlice`](`crate::BoxedSlice`) containing the arguments.
 ///
 /// `boxed!` allows boxed slices to be defined either enumerating the elements or
 /// with a value and a length.

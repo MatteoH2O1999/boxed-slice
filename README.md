@@ -1,9 +1,9 @@
 # box_slice
-[![downloads](https://img.shields.io/crates/d/box_slice)](https://crates.io/crates/par_slice)
-[![dependents](https://img.shields.io/librariesio/dependents/cargo/box_slice)](https://crates.io/crates/par_slice/reverse_dependencies)
+[![downloads](https://img.shields.io/crates/d/box_slice)](https://crates.io/crates/box_slice)
+[![dependents](https://img.shields.io/librariesio/dependents/cargo/box_slice)](https://crates.io/crates/box_slice/reverse_dependencies)
 ![license](https://img.shields.io/crates/l/box_slice)
-[![Latest version](https://img.shields.io/crates/v/box_slice.svg)](https://crates.io/crates/par_slice)
-[![Documentation](https://docs.rs/box_slice/badge.svg)](https://docs.rs/par_slice)
+[![Latest version](https://img.shields.io/crates/v/box_slice.svg)](https://crates.io/crates/box_slice)
+[![Documentation](https://docs.rs/box_slice/badge.svg)](https://docs.rs/box_slice)
 
 `box_slice` is a utility crate that implements several helpers to
 work with slices in [`Box`](https://doc.rust-lang.org/alloc/boxed/struct.Box.html).
