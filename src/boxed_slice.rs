@@ -77,6 +77,10 @@ pub fn new_boxed_slice_from_array<T, const N: usize>(array: [T; N]) -> Box<[T]> 
 /// let expected = vec![f64::default(); 5].into_boxed_slice();
 /// assert_eq!(boxed_slice, expected);
 /// ```
+///
+/// # Panic
+/// This function panics if any call to [`Default`] panics.
+/// Elements already written to the slice are dropped.
 #[inline]
 pub fn new_boxed_slice<T: Default>(len: usize) -> Box<[T]> {
     new_boxed_slice_with_initializer(T::default, len)
@@ -96,6 +100,10 @@ pub fn new_boxed_slice<T: Default>(len: usize) -> Box<[T]> {
 /// let expected = vec![1.5f64; 5].into_boxed_slice();
 /// assert_eq!(boxed_slice, expected);
 /// ```
+///
+/// # Panic
+/// This function panics if any call to [`Clone`] panics.
+/// Elements already written to the slice are dropped.
 pub fn new_boxed_slice_with_value<T: Clone>(value: T, len: usize) -> Box<[T]> {
     let mut uninit_box = Box::new_uninit_slice(len);
     {
@@ -129,6 +137,10 @@ pub fn new_boxed_slice_with_value<T: Clone>(value: T, len: usize) -> Box<[T]> {
 /// let expected = vec![15.0f64; 5].into_boxed_slice();
 /// assert_eq!(boxed_slice, expected);
 /// ```
+///
+/// # Panic
+/// This function panics if any call to `func` panics.
+/// Elements already written to the slice are dropped.
 #[inline]
 pub fn new_boxed_slice_with_initializer<T>(mut func: impl FnMut() -> T, len: usize) -> Box<[T]> {
     new_boxed_slice_with_indexed_initializer(|_| func(), len)
@@ -148,6 +160,10 @@ pub fn new_boxed_slice_with_initializer<T>(mut func: impl FnMut() -> T, len: usi
 /// let expected = vec![0, 1, 2, 3, 4].into_boxed_slice();
 /// assert_eq!(boxed_slice, expected);
 /// ```
+///
+/// # Panic
+/// This function panics if any call to `func` panics.
+/// Elements already written to the slice are dropped.
 pub fn new_boxed_slice_with_indexed_initializer<T>(
     mut func: impl FnMut(usize) -> T,
     len: usize,
