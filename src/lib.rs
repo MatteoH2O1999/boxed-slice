@@ -6,16 +6,16 @@
 //!
 //! # Basic usage
 //!
-//! This package exposes the macro [`boxed`], to rapidely create a boxed
+//! This package exposes the macro [`boxed!`], to rapidely create a boxed
 //! slice from a value and a length.
 //!
 //! ```
 //! use box_slice::boxed;
 //!
 //! let boxed_slice = boxed!(45, 3);
-//! let expected_slice = vec![45, 45, 45].into_boxed_slice();
+//! let expected_slice = vec![45, 45, 45];
 //!
-//! assert_eq!(boxed_slice, expected_slice);
+//! assert_eq!(boxed_slice.as_slice(), expected_slice);
 //! ```
 //!
 //! It also exposes several functions to create boxed slices from different inputs:

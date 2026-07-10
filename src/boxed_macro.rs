@@ -5,24 +5,25 @@
 /// There are three forms to this macro:
 /// * Create an empty boxed slice:
 /// ```
+/// # use box_slice::BoxedSlice;
 /// # use box_slice::boxed;
-/// let boxed_slice: Box<[f64]> = boxed!();
+/// let boxed_slice: BoxedSlice<f64> = boxed!();
 /// let expected = Box::new([]) as Box<[f64]>;
-/// assert_eq!(boxed_slice, expected);
+/// assert_eq!(boxed_slice.into_box(), expected);
 /// ```
 /// * Create a boxed slice from an array:
 /// ```
 /// # use box_slice::boxed;
 /// let boxed_slice = boxed!([42, 69, 2]);
 /// let expected = vec![42, 69, 2].into_boxed_slice();
-/// assert_eq!(boxed_slice, expected);
+/// assert_eq!(boxed_slice.into_box(), expected);
 /// ```
 /// * Create a boxed slice from a given element and size:
 /// ```
 /// # use box_slice::boxed;
 /// let boxed_slice = boxed!(42, 3);
 /// let expected = vec![42; 3].into_boxed_slice();
-/// assert_eq!(boxed_slice, expected);
+/// assert_eq!(boxed_slice.into_box(), expected);
 /// ```
 /// Note that unlike array expressions this syntax supports all elements
 /// which implement [`Clone`] and the number of elements doesn't have to be
@@ -40,19 +41,20 @@
 #[macro_export]
 macro_rules! boxed {
     () => {
-        $crate::new_empty_boxed_slice()
+        $crate::BoxedSlice::new_empty()
     };
     ($elem:expr) => {
-        $crate::new_boxed_slice_from_array($elem)
+        $crate::BoxedSlice::from_array($elem)
     };
     ($elem:expr, $n:expr) => {
-        $crate::new_boxed_slice_with_value($elem, $n)
+        $crate::BoxedSlice::with_value($elem, $n)
     };
 }
 
 #[cfg(test)]
 mod test {
-    use alloc::{boxed::Box, vec};
+    use crate::BoxedSlice;
+    use alloc::vec;
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
     struct TestType {
@@ -67,7 +69,7 @@ mod test {
 
     #[test]
     fn empty() {
-        let slice: Box<[usize]> = boxed!();
+        let slice: BoxedSlice<usize> = boxed!();
 
         assert!(slice.is_empty());
     }
@@ -77,7 +79,7 @@ mod test {
         let slice = boxed!(TestType { value: 69 }, 5);
         let expected = vec![TestType { value: 69 }; 5].into_boxed_slice();
 
-        assert_eq!(slice, expected);
+        assert_eq!(slice.into_box(), expected);
     }
 
     #[test]
@@ -85,7 +87,7 @@ mod test {
         let slice = boxed!([TestType { value: 420 }, TestType { value: 690 }]);
         let expected = vec![TestType { value: 420 }, TestType { value: 690 }].into_boxed_slice();
 
-        assert_eq!(slice, expected);
+        assert_eq!(slice.into_box(), expected);
     }
 
     #[test]
@@ -106,6 +108,6 @@ mod test {
         ]
         .into_boxed_slice();
 
-        assert_eq!(slice, expected);
+        assert_eq!(slice.into_box(), expected);
     }
 }
