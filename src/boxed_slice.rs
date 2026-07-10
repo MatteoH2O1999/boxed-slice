@@ -20,21 +20,82 @@ impl<'a, T> Drop for PanicGuard<'a, T> {
     }
 }
 
+/// Creates a new empty boxed slice of the specified type.
+///
+/// # Examples
+/// Usually the type must be specified with turbofish:
+/// ```
+/// use box_slice::new_empty_boxed_slice;
+///
+/// let boxed_slice = new_empty_boxed_slice::<f64>();
+/// assert!(boxed_slice.is_empty());
+/// ```
+/// It can also be specified with the variable declaration:
+/// ```
+/// use box_slice::new_empty_boxed_slice;
+///
+/// let boxed_slice: Box<[f64]> = new_empty_boxed_slice();
+/// assert!(boxed_slice.is_empty());
+/// ```
 #[inline]
 pub fn new_empty_boxed_slice<T>() -> Box<[T]> {
     Box::new([])
 }
 
+/// Creates a boxed slice from the given array.
+///
+/// # Examples
+/// The type is usually inferred for non-empty arrays:
+/// ```
+/// use box_slice::new_boxed_slice_from_array;
+///
+/// let boxed_slice = new_boxed_slice_from_array([1.0f64, 3.0]); // Inferred: Box<[f64]>
+/// let expected = vec![1.0f64, 3.0].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
 #[inline]
 pub fn new_boxed_slice_from_array<T, const N: usize>(array: [T; N]) -> Box<[T]> {
     Box::new(array)
 }
 
+/// Creates a boxed slice of length `len` initialized using the type's [`Default`].
+///
+/// # Examples
+/// Usually the type must be specified with turbofish:
+/// ```
+/// use box_slice::new_boxed_slice;
+///
+/// let boxed_slice = new_boxed_slice::<f64>(5);
+/// let expected = vec![f64::default(); 5].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
+/// It can also be specified with the variable declaration:
+/// ```
+/// use box_slice::new_boxed_slice;
+///
+/// let boxed_slice: Box<[f64]> = new_boxed_slice(5);
+/// let expected = vec![f64::default(); 5].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
 #[inline]
 pub fn new_boxed_slice<T: Default>(len: usize) -> Box<[T]> {
     new_boxed_slice_with_initializer(T::default, len)
 }
 
+/// Creates a boxed slice of length `len` initialized to `value`.
+///
+/// The passed value is inserted as the last slice element, while the others
+/// are obtained through [`Clone`].
+///
+/// # Examples
+/// The type can usually be inferred:
+/// ```
+/// use box_slice::new_boxed_slice_with_value;
+///
+/// let boxed_slice = new_boxed_slice_with_value(1.5f64, 5); // Inferred: Box<[f64]>
+/// let expected = vec![1.5f64; 5].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
 pub fn new_boxed_slice_with_value<T: Clone>(value: T, len: usize) -> Box<[T]> {
     let mut uninit_box = Box::new_uninit_slice(len);
     {
@@ -57,11 +118,36 @@ pub fn new_boxed_slice_with_value<T: Clone>(value: T, len: usize) -> Box<[T]> {
     }
 }
 
+/// Creates a boxed slice of length `len` initialized using `func`.
+///
+/// # Examples
+/// The type can usually be inferred from the passed closure:
+/// ```
+/// use box_slice::new_boxed_slice_with_initializer;
+///
+/// let boxed_slice = new_boxed_slice_with_initializer(|| 15.0f64, 5); // Inferred: Box<[f64]>
+/// let expected = vec![15.0f64; 5].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
 #[inline]
 pub fn new_boxed_slice_with_initializer<T>(mut func: impl FnMut() -> T, len: usize) -> Box<[T]> {
     new_boxed_slice_with_indexed_initializer(|_| func(), len)
 }
 
+/// Creates a boxed slice of length `len` initialized using `func`,
+///
+/// `func` takes an [`usize`] from `0` to `len - 1` and returns the `n-th`
+/// element of the boxed slice.
+///
+/// # Examples
+/// The type can usually be inferred from the passed closure:
+/// ```
+/// use box_slice::new_boxed_slice_with_indexed_initializer;
+///
+/// let boxed_slice = new_boxed_slice_with_indexed_initializer(|i| i, 5); // Inferred: Box<[usize]>
+/// let expected = vec![0, 1, 2, 3, 4].into_boxed_slice();
+/// assert_eq!(boxed_slice, expected);
+/// ```
 pub fn new_boxed_slice_with_indexed_initializer<T>(
     mut func: impl FnMut(usize) -> T,
     len: usize,
@@ -138,15 +224,24 @@ impl<T> From<BoxedSlice<T>> for Box<[T]> {
     }
 }
 
+impl<T> From<Box<[T]>> for BoxedSlice<T> {
+    #[inline]
+    fn from(value: Box<[T]>) -> Self {
+        Self(value)
+    }
+}
+
 impl<T> Deref for BoxedSlice<T> {
     type Target = Box<[T]>;
 
+    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl<T> DerefMut for BoxedSlice<T> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
